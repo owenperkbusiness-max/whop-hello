@@ -211,6 +211,13 @@
       }
     };
 
+    const saved = loadSavedState();
+    if (saved) {
+      if (typeof saved.userRule === "string") state.userRule = saved.userRule;
+      if (typeof saved.nextWeekRule === "string") state.nextWeekRule = saved.nextWeekRule;
+      if (typeof saved.statusText === "string") state.statusText = saved.statusText;
+    }
+    
     function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
     const STORAGE_KEY = "va_app_state_v1";
@@ -334,11 +341,13 @@
 
       document.getElementById("btnPass").onclick = () => {
         state.statusText = "You confirmed your partner as Passed. Waiting for them to confirm you.";
+        saveState();
         setRoute("dashboard");
       };
 
       document.getElementById("btnFail").onclick = () => {
         state.statusText = "You marked your partner as Failed. Waiting for them to confirm you.";
+        saveState();
         setRoute("dashboard");
       };
     }
@@ -506,7 +515,8 @@
               return;
             }
             state.nextWeekRule = v;
-    
+            saveState();
+  
             // Show a quick saved message, stay on page, and switch to non-edit view
             isEditing = false;
             draw();
@@ -527,4 +537,5 @@
   </script>
 </body>
 </html>
+
 
