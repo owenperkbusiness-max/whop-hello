@@ -342,6 +342,9 @@
     }
 
     function route() {
+      computeTiming();
+      finalizeWeekIfNeeded();
+      
       const hash = location.hash.replace("#", "") || "dashboard";
       if (hash === "confirm") return renderConfirm();
       if (hash === "history") return renderHistory();
@@ -732,6 +735,7 @@
   </script>
 </body>
 </html>
+
 
 
 
