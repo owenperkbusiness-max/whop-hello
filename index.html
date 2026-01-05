@@ -305,7 +305,16 @@
         </div>
 
         <div class="status">
-          <div class="statusTitle">Status</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <div class="statusTitle">Status</div>
+            ${
+              state.weekOutcome === "passed"
+                ? `<span class="badge badgeGreen">Passed</span>`
+                : state.weekOutcome === "missed"
+                  ? `<span class="badge badgeRed">Missed</span>`
+                  : `<span class="badge">Pending</span>`
+            }
+          </div>
           <div class="statusText">${esc(state.statusText)}</div>
           ${state.youConfirmedPartner
             ? `<div class="tiny" style="margin-top:10px;">Your vote: <span style="color:#cfcfcf; font-weight:700;">${state.youConfirmedPartner.toUpperCase()}</span></div>`
@@ -325,7 +334,14 @@
           </div>
 
           <div class="tiny">
-            Dev: <button class="linkBtn" id="toggleConfirm">toggle confirm window</button>
+            Dev:
+            <button class="linkBtn" id="toggleConfirm">toggle confirm window</button>
+            <span class="muted">,</span>
+            <button class="linkBtn" id="partnerPass">partner votes pass</button>
+            <span class="muted">,</span>
+            <button class="linkBtn" id="partnerFail">partner votes fail</button>
+            <span class="muted">,</span>
+            <button class="linkBtn" id="resetWeek">reset</button>
           </div>
         </div>
       `;
@@ -339,6 +355,43 @@
         saveState();
         route();
       };
+      function computeOutcome() {
+        // Passed only if both votes are pass
+        if (state.youConfirmedPartner === "pass" && state.partnerConfirmedYou === "pass") {
+          state.weekOutcome = "passed";
+          state.statusText = "Week passed. Nice work.";
+        } else if (state.youConfirmedPartner && state.partnerConfirmedYou) {
+          state.weekOutcome = "missed";
+          state.statusText = "Week missed. This adds a strike.";
+        } else {
+          state.weekOutcome = "pending";
+        }
+        }
+      
+      document.getElementById("partnerPass").onclick = () => {
+        state.partnerConfirmedYou = "pass";
+        computeOutcome();
+        saveState();
+        route();
+      };
+      
+      document.getElementById("partnerFail").onclick = () => {
+        state.partnerConfirmedYou = "fail";
+        computeOutcome();
+        saveState();
+        route();
+      };
+      
+      document.getElementById("resetWeek").onclick = () => {
+        state.confirmWindowOpen = false;
+        state.youConfirmedPartner = null;
+        state.partnerConfirmedYou = null;
+        state.weekOutcome = "pending";
+        state.statusText = "Waiting for Sunday confirmations to open.";
+        saveState();
+        route();
+      };
+
       document.getElementById("goHistory").onclick = () => setRoute("history");
       document.getElementById("goRules").onclick = () => setRoute("rules");
     }
@@ -571,6 +624,7 @@
   </script>
 </body>
 </html>
+
 
 
 
