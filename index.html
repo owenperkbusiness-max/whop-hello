@@ -202,6 +202,8 @@
       youConfirmedPartner: null, // null | "pass" | "fail"
       partnerConfirmedYou: null, // null | "pass" | "fail"
       weekOutcome: "pending", // "pending" | "passed" | "missed"
+      strikes: 0, // 0-3
+      isPaused: false,
       history: {
         totalWeeks: 4,
         passed: 3,
@@ -238,6 +240,8 @@
         youConfirmedPartner: state.youConfirmedPartner,
         partnerConfirmedYou: state.partnerConfirmedYou,
         weekOutcome: state.weekOutcome
+        strikes: state.strikes,
+        isPaused: state.isPaused,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     }
@@ -251,6 +255,8 @@
       if (typeof saved.youConfirmedPartner === "string" || saved.youConfirmedPartner === null) state.youConfirmedPartner = saved.youConfirmedPartner;
       if (typeof saved.partnerConfirmedYou === "string" || saved.partnerConfirmedYou === null) state.partnerConfirmedYou = saved.partnerConfirmedYou;
       if (typeof saved.weekOutcome === "string") state.weekOutcome = saved.weekOutcome;
+      if (typeof saved.strikes === "number") state.strikes = saved.strikes;
+      if (typeof saved.isPaused === "boolean") state.isPaused = saved.isPaused;
     }
     
     function setRoute(route) {
@@ -316,6 +322,7 @@
             }
           </div>
           <div class="statusText">${esc(state.statusText)}</div>
+          <div class="tiny" style="margin-top:10px;">Strikes: <span style="color:#cfcfcf; font-weight:800;">${state.strikes}/3</span></div>
           ${state.youConfirmedPartner
             ? `<div class="tiny" style="margin-top:10px;">Your vote: <span style="color:#cfcfcf; font-weight:700;">${state.youConfirmedPartner.toUpperCase()}</span></div>`
             : ``
@@ -342,11 +349,14 @@
             <button class="linkBtn" id="partnerFail">partner votes fail</button>
             <span class="muted">,</span>
             <button class="linkBtn" id="resetWeek">reset</button>
+            <span class="muted">,</span>
+            <button class="linkBtn" id="resetStrikes">reset strikes</button>
           </div>
         </div>
       `;
 
       document.getElementById("goConfirm").onclick = () => {
+        if (state.isPaused) return;
         if (!state.confirmWindowOpen) return;
         setRoute("confirm");
       };
@@ -362,7 +372,13 @@
           state.statusText = "Week passed. Nice work.";
         } else if (state.youConfirmedPartner && state.partnerConfirmedYou) {
           state.weekOutcome = "missed";
+          state.strikes = Math.min(3, (state.strikes || 0) + 1);
           state.statusText = "Week missed. This adds a strike.";
+        
+          if (state.strikes >= 3) {
+            state.isPaused = true;
+            state.statusText = "You’re paused. 3 strikes. You’re removed from the partner pool.";
+          }
         } else {
           state.weekOutcome = "pending";
         }
@@ -383,6 +399,13 @@
       };
       
       document.getElementById("resetWeek").onclick = () => {
+        document.getElementById("resetStrikes").onclick = () => {
+          state.strikes = 0;
+          state.isPaused = false;
+          state.statusText = "Waiting for Sunday confirmations to open.";
+          saveState();
+          route();
+        };
         state.confirmWindowOpen = false;
         state.youConfirmedPartner = null;
         state.partnerConfirmedYou = null;
@@ -624,6 +647,7 @@
   </script>
 </body>
 </html>
+
 
 
 
