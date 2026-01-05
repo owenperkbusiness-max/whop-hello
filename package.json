@@ -1,8 +1,8 @@
 {
-  "name": "virtual-accountability",
+  "name": "whop-hello",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@whop/api": "0.0.51"
+    "@whop/sdk": "^1.0.0"
   }
 }
