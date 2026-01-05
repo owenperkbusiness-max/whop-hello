@@ -190,6 +190,10 @@
   <div class="container" id="app"></div>
 
   <script>
+    fetch("/api/me")
+      .then(r => r.json())
+      .then(data => console.log("ME", data))
+      .catch(err => console.error("ME ERR", err));
     console.log("WHOP OBJECT", window.whop || window.Whop || window.__WHOP__);
     // Fake data for now (we replace this with DB + Whop later)
     const state = {
@@ -761,6 +765,7 @@
   </script>
 </body>
 </html>
+
 
 
 
