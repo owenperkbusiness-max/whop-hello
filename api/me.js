@@ -6,6 +6,10 @@ const whop = new Whop({
 });
 
 export default async function handler(req, res) {
+  console.log("ENV", {
+    hasKey: !!process.env.WHOP_API_KEY,
+    hasApp: !!process.env.WHOP_APP_ID
+  });
   try {
     const result = await whop.verifyUserToken(req.headers, { dontThrow: true });
 
