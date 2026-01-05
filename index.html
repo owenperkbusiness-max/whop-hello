@@ -194,6 +194,7 @@
     const state = {
       weekLabel: "Mon → Sun",
       userRule: "No social media before 6pm",
+      nextWeekRule: "",
       partner: { initial: "J", name: "James R.", handle: "@jamesruns" },
       partnerRule: "Gym 4× this week",
       statusText: "Waiting for Sunday confirmations to open.",
@@ -371,68 +372,134 @@
     
     function renderRules() {
       const el = document.getElementById("app");
-
-      el.innerHTML = `
-        <div class="topbar">
-          <button class="linkBtn" id="backDash">← Back</button>
-          <div class="pill">${esc(state.weekLabel)}</div>
-        </div>
-
-        <div class="title" style="margin-bottom:6px;">Weekly Rules</div>
-        <div class="muted" style="font-size:13px; margin-bottom:14px;">
-          Set one specific, measurable rule for next week. It locks on Monday.
-        </div>
-
-        <div class="card">
-          <div class="label">Current week (locked)</div>
-          <div class="muted" style="font-size:12px; margin-bottom:6px;">Dec 29 – Jan 4</div>
-          <div class="rule">${esc(state.userRule)}</div>
-          <div class="sub muted">Cannot be changed</div>
-        </div>
-
-        <div class="card">
-          <div class="label">Next week</div>
-          <div class="muted" style="font-size:12px; margin-bottom:10px;">Starts Monday</div>
-
-          <textarea id="nextRule" rows="4" style="
-            width:100%;
-            box-sizing:border-box;
-            resize:none;
-            padding:12px;
-            border-radius:12px;
-            border:1px solid #2a2a2a;
-            background:#101010;
-            color:white;
-            font-family: inherit;
-            font-size:14px;
-            line-height:1.35;
-            outline:none;
-          " placeholder="Example: Complete 30 minutes of focused work before checking email"></textarea>
-
-          <div style="display:flex; justify-content:space-between; margin-top:8px;">
-            <div class="tiny" id="charCount">0/200</div>
-            <div class="tiny muted">One specific rule</div>
+    
+      // local UI state for this screen
+      const hasSavedNextRule = !!(state.nextWeekRule && state.nextWeekRule.trim());
+      let isEditing = !hasSavedNextRule;
+    
+      function draw() {
+        el.innerHTML = `
+          <div class="topbar">
+            <button class="linkBtn" id="backDash">← Back</button>
+            <div class="pill">${esc(state.weekLabel)}</div>
           </div>
-
-          <div class="row" style="margin-top:12px;">
-            <button class="btn btnPrimary" type="button" id="saveRule">Save rule</button>
-            <button class="btn btnGhost" type="button" id="cancelRule">Cancel</button>
+    
+          <div class="title" style="margin-bottom:6px;">Weekly Rules</div>
+          <div class="muted" style="font-size:13px; margin-bottom:14px;">
+            Set one specific, measurable rule for next week. It locks on Monday.
           </div>
-        </div>
-      `;
-
-      document.getElementById("backDash").onclick = () => setRoute("dashboard");
-      document.getElementById("cancelRule").onclick = () => setRoute("dashboard");
-
-      const input = document.getElementById("nextRule");
-      const count = document.getElementById("charCount");
-
-      function updateCount() {
-        if (input.value.length > 200) {
-          input.value = input.value.slice(0, 200);
+    
+          <div class="card">
+            <div class="label">Current week (locked)</div>
+            <div class="muted" style="font-size:12px; margin-bottom:6px;">Dec 29 – Jan 4</div>
+            <div class="rule">${esc(state.userRule)}</div>
+            <div class="sub muted">Cannot be changed</div>
+          </div>
+    
+          <div class="card">
+            <div class="label">Next week</div>
+            <div class="muted" style="font-size:12px; margin-bottom:10px;">Starts Monday</div>
+    
+            ${
+              isEditing
+                ? `
+                  <div class="label" style="margin-top:6px;">Set next week’s rule</div>
+                  <textarea id="nextRule" rows="4" style="
+                    width:100%;
+                    box-sizing:border-box;
+                    resize:none;
+                    padding:12px;
+                    border-radius:12px;
+                    border:1px solid #2a2a2a;
+                    background:#101010;
+                    color:white;
+                    font-family: inherit;
+                    font-size:14px;
+                    line-height:1.35;
+                    outline:none;
+                  " placeholder="Example: Complete 30 minutes of focused work before checking email">${esc(state.nextWeekRule || "")}</textarea>
+    
+                  <div style="display:flex; justify-content:space-between; margin-top:8px;">
+                    <div class="tiny" id="charCount">0/200</div>
+                    <div class="tiny muted">One specific rule</div>
+                  </div>
+    
+                  <div class="row" style="margin-top:12px;">
+                    <button class="btn btnPrimary" type="button" id="saveRule">Save rule</button>
+                    <button class="btn btnGhost" type="button" id="cancelEdit">Cancel</button>
+                  </div>
+    
+                  <div class="tiny" id="saveMsg" style="display:none;">Saved for next week.</div>
+                `
+                : `
+                  <div class="label" style="margin-top:6px;">Saved rule for next week</div>
+                  <div class="rule">${esc(state.nextWeekRule)}</div>
+                  <div class="sub muted">You can edit this until Monday.</div>
+    
+                  <div class="row" style="margin-top:12px;">
+                    <button class="btn" type="button" id="editNextRule">Edit next week’s rule</button>
+                  </div>
+                `
+            }
+          </div>
+    
+          <div class="card">
+            <div class="label">How rules work</div>
+            <div class="sub" style="margin-top:0;">
+              1. Set one specific rule each week<br>
+              2. Once the week starts (Monday), it’s locked<br>
+              3. Confirm your partner on Sunday<br>
+              4. Misses add strikes, 3 strikes pauses your account
+            </div>
+          </div>
+        `;
+    
+        document.getElementById("backDash").onclick = () => setRoute("dashboard");
+    
+        if (isEditing) {
+          const input = document.getElementById("nextRule");
+          const count = document.getElementById("charCount");
+          const msg = document.getElementById("saveMsg");
+    
+          function updateCount() {
+            if (input.value.length > 200) input.value = input.value.slice(0, 200);
+            count.textContent = `${input.value.length}/200`;
+          }
+          input.addEventListener("input", updateCount);
+          updateCount();
+    
+          document.getElementById("cancelEdit").onclick = () => {
+            // If nothing saved yet, cancel takes you back to dashboard
+            if (!state.nextWeekRule) {
+              setRoute("dashboard");
+            } else {
+              isEditing = false;
+              draw();
+            }
+          };
+    
+          document.getElementById("saveRule").onclick = () => {
+            const v = input.value.trim();
+            if (!v) {
+              alert("Enter a rule first.");
+              return;
+            }
+            state.nextWeekRule = v;
+    
+            // Show a quick saved message, stay on page, and switch to non-edit view
+            isEditing = false;
+            draw();
+          };
+        } else {
+          document.getElementById("editNextRule").onclick = () => {
+            isEditing = true;
+            draw();
+          };
         }
-        count.textContent = `${input.value.length}/200`;
       }
+    
+      draw();
+    }
 
       input.addEventListener("input", updateCount);
       updateCount();
@@ -453,4 +520,5 @@
   </script>
 </body>
 </html>
+
 
