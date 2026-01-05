@@ -204,6 +204,9 @@
       weekOutcome: "pending", // "pending" | "passed" | "missed"
       strikes: 0, // 0-3
       isPaused: false,
+      weekId: "", // format YYYY-MM-DD (Monday start)
+      confirmCutoffISO: "", // ISO string for Sunday 11:59pm local
+      finalizedWeekId: "", // prevents double-strikes on refresh
       history: {
         totalWeeks: 4,
         passed: 3,
@@ -230,7 +233,80 @@
         return null;
       }
     }
+
+    function getLocalISODate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
     
+    // Returns a Date for Monday 00:00 of the current week (local time)
+    function getWeekMonday(now) {
+      const d = new Date(now);
+      d.setHours(0, 0, 0, 0);
+      const day = d.getDay(); // 0 Sun .. 6 Sat
+      const diffToMonday = (day + 6) % 7; // Mon->0, Tue->1, ..., Sun->6
+      d.setDate(d.getDate() - diffToMonday);
+      return d;
+    }
+    
+    function computeTiming() {
+      const now = new Date();
+      const mon = getWeekMonday(now);
+      const weekId = getLocalISODate(mon);
+    
+      // Sunday 23:59:59 local
+      const cutoff = new Date(mon);
+      cutoff.setDate(cutoff.getDate() + 6);
+      cutoff.setHours(23, 59, 59, 999);
+    
+      state.weekId = weekId;
+      state.confirmCutoffISO = cutoff.toISOString();
+    
+      // Confirm window open on Sunday only (local time)
+      const isSunday = now.getDay() === 0;
+      state.confirmWindowOpen = isSunday && now <= cutoff && !state.isPaused;
+    
+      // If we’re past cutoff and both votes exist, compute outcome
+      // If past cutoff and missing votes, force missed (strike) once per week
+    }
+
+    function finalizeWeekIfNeeded() {
+      const now = new Date();
+      const cutoff = state.confirmCutoffISO ? new Date(state.confirmCutoffISO) : null;
+      if (!cutoff) return;
+    
+      // Only finalize after cutoff
+      if (now <= cutoff) return;
+    
+      // Only once per week
+      if (state.finalizedWeekId === state.weekId) return;
+    
+      // If either vote missing OR any fail, it’s a miss
+      const bothVoted = !!state.youConfirmedPartner && !!state.partnerConfirmedYou;
+      const bothPass = state.youConfirmedPartner === "pass" && state.partnerConfirmedYou === "pass";
+    
+      if (bothVoted && bothPass) {
+        state.weekOutcome = "passed";
+        state.statusText = "Week passed. Nice work.";
+      } else {
+        state.weekOutcome = "missed";
+        state.strikes = Math.min(3, (state.strikes || 0) + 1);
+        state.statusText = "Week missed. This adds a strike.";
+    
+        if (state.strikes >= 3) {
+          state.isPaused = true;
+          state.statusText = "You’re paused. 3 strikes. You’re removed from the partner pool.";
+        }
+      }
+    
+      // Close window and mark finalized
+      state.confirmWindowOpen = false;
+      state.finalizedWeekId = state.weekId;
+      saveState();
+    }
+        
     function saveState() {
       const toSave = {
         userRule: state.userRule,
@@ -242,6 +318,7 @@
         weekOutcome: state.weekOutcome,
         strikes: state.strikes,
         isPaused: state.isPaused,
+        finalizedWeekId: state.finalizedWeekId,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     }
@@ -257,6 +334,7 @@
       if (typeof saved.weekOutcome === "string") state.weekOutcome = saved.weekOutcome;
       if (typeof saved.strikes === "number") state.strikes = saved.strikes;
       if (typeof saved.isPaused === "boolean") state.isPaused = saved.isPaused;
+      if (typeof saved.finalizedWeekId === "string") state.finalizedWeekId = saved.finalizedWeekId;
     }
     
     function setRoute(route) {
@@ -363,6 +441,8 @@
       document.getElementById("toggleConfirm").onclick = () => {
         state.confirmWindowOpen = !state.confirmWindowOpen;
         saveState();
+        computeTiming();
+        finalizeWeekIfNeeded();
         route();
       };
       function computeOutcome() {
@@ -643,11 +723,16 @@
       draw();
     }
 
-    window.addEventListener("hashchange", route);
+    window.addEventListener("hashchange", () => {
+      computeTiming();
+      finalizeWeekIfNeeded();
+      route();
+    });
     route();
   </script>
 </body>
 </html>
+
 
 
 
