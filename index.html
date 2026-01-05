@@ -434,6 +434,9 @@
             }
           </div>
           <div class="statusText">${esc(state.statusText)}</div>
+          <div class="tiny" style="margin-top:8px; opacity:.7;">
+            Debug: weekId=${esc(state.weekId)} finalized=${esc(state.finalizedWeekId || "none")}
+          </div>
           <div class="tiny" style="margin-top:10px;">Strikes: <span style="color:#cfcfcf; font-weight:800;">${state.strikes}/3</span></div>
           ${state.youConfirmedPartner
             ? `<div class="tiny" style="margin-top:10px;">Your vote: <span style="color:#cfcfcf; font-weight:700;">${state.youConfirmedPartner.toUpperCase()}</span></div>`
@@ -758,6 +761,7 @@
   </script>
 </body>
 </html>
+
 
 
 
