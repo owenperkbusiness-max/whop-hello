@@ -220,6 +220,7 @@
       const hash = location.hash.replace("#", "") || "dashboard";
       if (hash === "confirm") return renderConfirm();
       if (hash === "history") return renderHistory();
+      if (hash === "rules") return renderRules();
       return renderDashboard();
     }
 
@@ -267,12 +268,18 @@
             <button class="btn btnGhost" type="button" id="goHistory">History</button>
           </div>
 
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" type="button" id="goRules">Manage rules</button>
+          </div>
+
           <div class="tiny">Next: wire these screens to real data + Whop.</div>
         </div>
       `;
 
       document.getElementById("goConfirm").onclick = () => setRoute("confirm");
       document.getElementById("goHistory").onclick = () => setRoute("history");
+      document.getElementById("goRules").onclick = () => setRoute("rules");
+
     }
 
     function renderConfirm() {
@@ -361,9 +368,89 @@
 
       document.getElementById("backDash").onclick = () => setRoute("dashboard");
     }
+    
+    function renderRules() {
+      const el = document.getElementById("app");
+
+      el.innerHTML = `
+        <div class="topbar">
+          <button class="linkBtn" id="backDash">← Back</button>
+          <div class="pill">${esc(state.weekLabel)}</div>
+        </div>
+
+        <div class="title" style="margin-bottom:6px;">Weekly Rules</div>
+        <div class="muted" style="font-size:13px; margin-bottom:14px;">
+          Set one specific, measurable rule for next week. It locks on Monday.
+        </div>
+
+        <div class="card">
+          <div class="label">Current week (locked)</div>
+          <div class="muted" style="font-size:12px; margin-bottom:6px;">Dec 29 – Jan 4</div>
+          <div class="rule">${esc(state.userRule)}</div>
+          <div class="sub muted">Cannot be changed</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Next week</div>
+          <div class="muted" style="font-size:12px; margin-bottom:10px;">Starts Monday</div>
+
+          <textarea id="nextRule" rows="4" style="
+            width:100%;
+            box-sizing:border-box;
+            resize:none;
+            padding:12px;
+            border-radius:12px;
+            border:1px solid #2a2a2a;
+            background:#101010;
+            color:white;
+            font-family: inherit;
+            font-size:14px;
+            line-height:1.35;
+            outline:none;
+          " placeholder="Example: Complete 30 minutes of focused work before checking email"></textarea>
+
+          <div style="display:flex; justify-content:space-between; margin-top:8px;">
+            <div class="tiny" id="charCount">0/200</div>
+            <div class="tiny muted">One specific rule</div>
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="btn btnPrimary" type="button" id="saveRule">Save rule</button>
+            <button class="btn btnGhost" type="button" id="cancelRule">Cancel</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("backDash").onclick = () => setRoute("dashboard");
+      document.getElementById("cancelRule").onclick = () => setRoute("dashboard");
+
+      const input = document.getElementById("nextRule");
+      const count = document.getElementById("charCount");
+
+      function updateCount() {
+        if (input.value.length > 200) {
+          input.value = input.value.slice(0, 200);
+        }
+        count.textContent = `${input.value.length}/200`;
+      }
+
+      input.addEventListener("input", updateCount);
+      updateCount();
+
+      document.getElementById("saveRule").onclick = () => {
+        const v = input.value.trim();
+        if (!v) {
+          alert("Enter a rule first.");
+          return;
+        }
+        state.userRule = v;
+        setRoute("dashboard");
+      };
+    }
 
     window.addEventListener("hashchange", route);
     route();
   </script>
 </body>
 </html>
+
