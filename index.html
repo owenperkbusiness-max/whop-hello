@@ -255,22 +255,52 @@
     function computeTiming() {
       const now = new Date();
       const mon = getWeekMonday(now);
-      const weekId = getLocalISODate(mon);
+      const newWeekId = getLocalISODate(mon);
     
-      // Sunday 23:59:59 local
+      // Snapshot what we previously thought the current week was (from saved state)
+      const prevWeekId = state.weekId;
+      const prevCutoffISO = state.confirmCutoffISO;
+    
+      // If the week rolled over (usually Monday), finalize the previous week once
+      if (prevWeekId && prevWeekId !== newWeekId && state.finalizedWeekId !== prevWeekId) {
+        // Use the previous week context to finalize
+        const holdWeekId = state.weekId;
+        const holdCutoff = state.confirmCutoffISO;
+    
+        state.weekId = prevWeekId;
+        state.confirmCutoffISO = prevCutoffISO;
+    
+        finalizeWeekIfNeeded();
+    
+        // Restore (we’re about to set the new week anyway)
+        state.weekId = holdWeekId;
+        state.confirmCutoffISO = holdCutoff;
+      }
+    
+      // New week cutoff = Sunday 23:59:59.999 local time
       const cutoff = new Date(mon);
       cutoff.setDate(cutoff.getDate() + 6);
       cutoff.setHours(23, 59, 59, 999);
     
-      state.weekId = weekId;
+      state.weekId = newWeekId;
       state.confirmCutoffISO = cutoff.toISOString();
     
       // Confirm window open on Sunday only (local time)
       const isSunday = now.getDay() === 0;
       state.confirmWindowOpen = isSunday && now <= cutoff && !state.isPaused;
     
-      // If we’re past cutoff and both votes exist, compute outcome
-      // If past cutoff and missing votes, force missed (strike) once per week
+      // If we rolled into a new week, reset week-specific UI state and roll the rule forward
+      if (prevWeekId && prevWeekId !== newWeekId) {
+        if (state.nextWeekRule && state.nextWeekRule.trim()) {
+          state.userRule = state.nextWeekRule;
+          state.nextWeekRule = "";
+        }
+        state.youConfirmedPartner = null;
+        state.partnerConfirmedYou = null;
+        state.weekOutcome = "pending";
+        state.statusText = "Waiting for Sunday confirmations to open.";
+        saveState();
+      }
     }
 
     function finalizeWeekIfNeeded() {
@@ -728,6 +758,7 @@
   </script>
 </body>
 </html>
+
 
 
 
