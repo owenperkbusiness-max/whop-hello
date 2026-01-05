@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Accountability</title>
+  <title>Virtual Accountability</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
@@ -28,7 +28,7 @@
 
     .title {
       font-size: 20px;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: 0.2px;
     }
 
@@ -61,7 +61,7 @@
     .rule {
       font-size: 16px;
       line-height: 1.35;
-      font-weight: 600;
+      font-weight: 650;
     }
 
     .sub {
@@ -81,8 +81,9 @@
     }
 
     .statusTitle {
-      font-weight: 700;
+      font-weight: 750;
       margin-bottom: 6px;
+      font-size: 16px;
     }
 
     .statusText {
@@ -104,14 +105,12 @@
       border: 1px solid #2a2a2a;
       background: #1a1a1a;
       color: white;
-      font-weight: 650;
+      font-weight: 700;
       cursor: pointer;
       font-size: 14px;
     }
 
-    .btn:active {
-      transform: translateY(1px);
-    }
+    .btn:active { transform: translateY(1px); }
 
     .btnPrimary {
       background: #ffffff;
@@ -129,61 +128,242 @@
       font-size: 12px;
       color: #8f8f8f;
     }
+
+    .linkBtn {
+      background: transparent;
+      border: none;
+      color: #bdbdbd;
+      cursor: pointer;
+      padding: 0;
+      font-size: 13px;
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .muted { color: #9a9a9a; }
+
+    .kpiRow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+      margin-bottom: 14px;
+    }
+
+    .kpi {
+      background: #141414;
+      border: 1px solid #242424;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .kpiNum {
+      font-weight: 850;
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .kpiLab {
+      font-size: 11px;
+      color: #a9a9a9;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #2a2a2a;
+      background: #1b1b1b;
+      color: #cfcfcf;
+      display: inline-block;
+    }
+
+    .badgeGreen { border-color:#1f3a2a; background:#122019; color:#9fe7c0; }
+    .badgeRed { border-color:#3a1f1f; background:#201212; color:#f2a1a1; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="topbar">
-      <div class="title">This Week</div>
-      <div class="pill">Mon → Sun</div>
-    </div>
+  <div class="container" id="app"></div>
 
-    <div class="card">
-      <div class="label">Your rule</div>
-      <div class="rule">No social media before 6pm</div>
-      <div class="sub">Keep it specific, measurable, and easy to verify.</div>
-    </div>
+  <script>
+    // Fake data for now (we replace this with DB + Whop later)
+    const state = {
+      weekLabel: "Mon → Sun",
+      userRule: "No social media before 6pm",
+      partner: { initial: "J", name: "James R.", handle: "@jamesruns" },
+      partnerRule: "Gym 4× this week",
+      statusText: "Waiting for Sunday confirmations to open.",
+      history: {
+        totalWeeks: 4,
+        passed: 3,
+        missed: 1,
+        strikes: "1/3",
+        pastWeeks: [
+          { range: "Dec 23 – Dec 29", partner: "Jordan Lee", rule: "Meditate 10 minutes every morning", you: "Responded", partnerResp: "Responded", outcome: "Passed" },
+          { range: "Dec 16 – Dec 22", partner: "Taylor Chen", rule: "No social media until 5pm", you: "Responded", partnerResp: "Responded", outcome: "Passed" },
+          { range: "Dec 9 – Dec 15", partner: "Morgan Williams", rule: "Write 500 words daily", you: "Responded", partnerResp: "No response", outcome: "Missed" }
+        ]
+      }
+    };
 
-    <div class="card">
-      <div class="label">Your partner</div>
+    function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-        <div style="
-          width:36px;
-          height:36px;
-          border-radius:50%;
-          background:#2a2a2a;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          font-weight:700;
-        ">
-          J
+    function setRoute(route) {
+      location.hash = route;
+    }
+
+    function route() {
+      const hash = location.hash.replace("#", "") || "dashboard";
+      if (hash === "confirm") return renderConfirm();
+      if (hash === "history") return renderHistory();
+      return renderDashboard();
+    }
+
+    function renderDashboard() {
+      const el = document.getElementById("app");
+      el.innerHTML = `
+        <div class="topbar">
+          <div class="title">This Week</div>
+          <div class="pill">${esc(state.weekLabel)}</div>
         </div>
 
-        <div>
-          <div style="font-weight:700;">James R.</div>
-          <div style="font-size:12px; color:#9a9a9a;">@jamesruns</div>
+        <div class="card">
+          <div class="label">Your rule</div>
+          <div class="rule">${esc(state.userRule)}</div>
+          <div class="sub">Keep it specific, measurable, and easy to verify.</div>
         </div>
-      </div>
 
-      <div class="label" style="margin-top:6px;">Partner’s rule</div>
-      <div class="rule">Gym 4× this week</div>
-      <div class="sub">You’ll confirm this on Sunday.</div>
-    </div>
+        <div class="card">
+          <div class="label">Your partner</div>
 
-    <div class="status">
-      <div class="statusTitle">Status</div>
-      <div class="statusText">Waiting for Sunday confirmations to open.</div>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+            <div style="
+              width:36px; height:36px; border-radius:50%;
+              background:#2a2a2a; display:flex; align-items:center; justify-content:center;
+              font-weight:800;
+            ">${esc(state.partner.initial)}</div>
 
-      <div class="row">
-        <button class="btn btnPrimary" type="button">Confirm partner</button>
-        <button class="btn btnGhost" type="button">History</button>
-      </div>
+            <div>
+              <div style="font-weight:800;">${esc(state.partner.name)}</div>
+              <div style="font-size:12px; color:#9a9a9a;">${esc(state.partner.handle)}</div>
+            </div>
+          </div>
 
-      <div class="tiny">Buttons don’t do anything yet. Next step is wiring the flow.</div>
-    </div>
-  </div>
+          <div class="label" style="margin-top:6px;">Partner’s rule</div>
+          <div class="rule">${esc(state.partnerRule)}</div>
+          <div class="sub">You’ll confirm this on Sunday.</div>
+        </div>
+
+        <div class="status">
+          <div class="statusTitle">Status</div>
+          <div class="statusText">${esc(state.statusText)}</div>
+
+          <div class="row">
+            <button class="btn btnPrimary" type="button" id="goConfirm">Confirm partner</button>
+            <button class="btn btnGhost" type="button" id="goHistory">History</button>
+          </div>
+
+          <div class="tiny">Next: wire these screens to real data + Whop.</div>
+        </div>
+      `;
+
+      document.getElementById("goConfirm").onclick = () => setRoute("confirm");
+      document.getElementById("goHistory").onclick = () => setRoute("history");
+    }
+
+    function renderConfirm() {
+      const el = document.getElementById("app");
+      el.innerHTML = `
+        <div class="topbar">
+          <button class="linkBtn" id="backDash">← Back</button>
+          <div class="pill">${esc(state.weekLabel)}</div>
+        </div>
+
+        <div class="title" style="margin-bottom:10px;">Confirm partner</div>
+        <div class="muted" style="font-size:13px; margin-bottom:14px;">
+          Did ${esc(state.partner.name)} follow their rule this week?
+        </div>
+
+        <div class="card">
+          <div class="label">Partner’s rule</div>
+          <div class="rule">${esc(state.partnerRule)}</div>
+        </div>
+
+        <div class="row">
+          <button class="btn btnPrimary" type="button" id="btnPass">Pass</button>
+          <button class="btn" type="button" id="btnFail">Fail</button>
+        </div>
+
+        <div class="tiny">This is fake for now. Next we’ll save this to the database.</div>
+      `;
+
+      document.getElementById("backDash").onclick = () => setRoute("dashboard");
+
+      document.getElementById("btnPass").onclick = () => {
+        state.statusText = "You confirmed your partner as Passed. Waiting for them to confirm you.";
+        setRoute("dashboard");
+      };
+
+      document.getElementById("btnFail").onclick = () => {
+        state.statusText = "You marked your partner as Failed. Waiting for them to confirm you.";
+        setRoute("dashboard");
+      };
+    }
+
+    function renderHistory() {
+      const h = state.history;
+      const el = document.getElementById("app");
+
+      const list = h.pastWeeks.map(w => {
+        const ok = w.outcome === "Passed";
+        return `
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+              <div>
+                <div class="muted" style="font-size:12px; margin-bottom:6px;">${esc(w.range)}</div>
+                <div style="font-weight:800; margin-bottom:6px;">${esc(w.partner)}</div>
+                <div class="muted" style="font-size:13px; line-height:1.35;">“${esc(w.rule)}”</div>
+              </div>
+              <span class="badge ${ok ? "badgeGreen" : "badgeRed"}">${esc(w.outcome)}</span>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:12px; font-size:12px; color:#9a9a9a;">
+              <div>You: <span style="color:#cfcfcf">${esc(w.you)}</span></div>
+              <div>Partner: <span style="color:#cfcfcf">${esc(w.partnerResp)}</span></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      el.innerHTML = `
+        <div class="topbar">
+          <button class="linkBtn" id="backDash">← Back</button>
+          <div class="pill">${esc(state.weekLabel)}</div>
+        </div>
+
+        <div class="title" style="margin-bottom:6px;">Your History</div>
+        <div class="muted" style="font-size:13px; margin-bottom:12px;">Track your accountability journey</div>
+
+        <div class="kpiRow">
+          <div class="kpi"><div class="kpiNum">${esc(h.totalWeeks)}</div><div class="kpiLab">Total</div></div>
+          <div class="kpi"><div class="kpiNum">${esc(h.passed)}</div><div class="kpiLab">Passed</div></div>
+          <div class="kpi"><div class="kpiNum">${esc(h.missed)}</div><div class="kpiLab">Missed</div></div>
+          <div class="kpi"><div class="kpiNum">${esc(h.strikes)}</div><div class="kpiLab">Strikes</div></div>
+        </div>
+
+        <div class="label" style="margin-top:6px;">Past weeks</div>
+        ${list}
+      `;
+
+      document.getElementById("backDash").onclick = () => setRoute("dashboard");
+    }
+
+    window.addEventListener("hashchange", route);
+    route();
+  </script>
 </body>
 </html>
-
