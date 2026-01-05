@@ -239,7 +239,7 @@
         confirmWindowOpen: state.confirmWindowOpen,
         youConfirmedPartner: state.youConfirmedPartner,
         partnerConfirmedYou: state.partnerConfirmedYou,
-        weekOutcome: state.weekOutcome
+        weekOutcome: state.weekOutcome,
         strikes: state.strikes,
         isPaused: state.isPaused,
       };
@@ -382,7 +382,6 @@
         } else {
           state.weekOutcome = "pending";
         }
-        }
       
       document.getElementById("partnerPass").onclick = () => {
         state.partnerConfirmedYou = "pass";
@@ -399,17 +398,18 @@
       };
       
       document.getElementById("resetWeek").onclick = () => {
-        document.getElementById("resetStrikes").onclick = () => {
-          state.strikes = 0;
-          state.isPaused = false;
-          state.statusText = "Waiting for Sunday confirmations to open.";
-          saveState();
-          route();
-        };
         state.confirmWindowOpen = false;
         state.youConfirmedPartner = null;
         state.partnerConfirmedYou = null;
         state.weekOutcome = "pending";
+        state.statusText = "Waiting for Sunday confirmations to open.";
+        saveState();
+        route();
+      };
+      
+      document.getElementById("resetStrikes").onclick = () => {
+        state.strikes = 0;
+        state.isPaused = false;
         state.statusText = "Waiting for Sunday confirmations to open.";
         saveState();
         route();
@@ -647,6 +647,7 @@
   </script>
 </body>
 </html>
+
 
 
 
