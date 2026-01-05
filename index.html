@@ -307,6 +307,10 @@
         <div class="status">
           <div class="statusTitle">Status</div>
           <div class="statusText">${esc(state.statusText)}</div>
+          ${state.youConfirmedPartner
+            ? `<div class="tiny" style="margin-top:10px;">Your vote: <span style="color:#cfcfcf; font-weight:700;">${state.youConfirmedPartner.toUpperCase()}</span></div>`
+            : ``
+          }
 
           <div class="row">
             ${state.confirmWindowOpen
@@ -368,12 +372,14 @@
       document.getElementById("backDash").onclick = () => setRoute("dashboard");
 
       document.getElementById("btnPass").onclick = () => {
+        state.youConfirmedPartner = "pass";
         state.statusText = "You confirmed your partner as Passed. Waiting for them to confirm you.";
         saveState();
         setRoute("dashboard");
       };
 
       document.getElementById("btnFail").onclick = () => {
+        state.youConfirmedPartner = "fail";
         state.statusText = "You marked your partner as Failed. Waiting for them to confirm you.";
         saveState();
         setRoute("dashboard");
@@ -565,6 +571,7 @@
   </script>
 </body>
 </html>
+
 
 
 
