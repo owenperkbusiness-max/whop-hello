@@ -198,6 +198,10 @@
       partner: { initial: "J", name: "James R.", handle: "@jamesruns" },
       partnerRule: "Gym 4× this week",
       statusText: "Waiting for Sunday confirmations to open.",
+      confirmWindowOpen: false, // later: auto true on Sunday
+      youConfirmedPartner: null, // null | "pass" | "fail"
+      partnerConfirmedYou: null, // null | "pass" | "fail"
+      weekOutcome: "pending", // "pending" | "passed" | "missed"
       history: {
         totalWeeks: 4,
         passed: 3,
@@ -229,7 +233,11 @@
       const toSave = {
         userRule: state.userRule,
         nextWeekRule: state.nextWeekRule,
-        statusText: state.statusText
+        statusText: state.statusText,
+        confirmWindowOpen: state.confirmWindowOpen,
+        youConfirmedPartner: state.youConfirmedPartner,
+        partnerConfirmedYou: state.partnerConfirmedYou,
+        weekOutcome: state.weekOutcome
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     }
@@ -239,6 +247,10 @@
       if (typeof saved.userRule === "string") state.userRule = saved.userRule;
       if (typeof saved.nextWeekRule === "string") state.nextWeekRule = saved.nextWeekRule;
       if (typeof saved.statusText === "string") state.statusText = saved.statusText;
+      if (typeof saved.confirmWindowOpen === "boolean") state.confirmWindowOpen = saved.confirmWindowOpen;
+      if (typeof saved.youConfirmedPartner === "string" || saved.youConfirmedPartner === null) state.youConfirmedPartner = saved.youConfirmedPartner;
+      if (typeof saved.partnerConfirmedYou === "string" || saved.partnerConfirmedYou === null) state.partnerConfirmedYou = saved.partnerConfirmedYou;
+      if (typeof saved.weekOutcome === "string") state.weekOutcome = saved.weekOutcome;
     }
     
     function setRoute(route) {
@@ -297,7 +309,10 @@
           <div class="statusText">${esc(state.statusText)}</div>
 
           <div class="row">
-            <button class="btn btnPrimary" type="button" id="goConfirm">Confirm partner</button>
+            ${state.confirmWindowOpen
+              ? `<button class="btn btnPrimary" type="button" id="goConfirm">Confirm partner</button>`
+              : `<button class="btn btnPrimary" type="button" id="goConfirm" disabled style="opacity:.45; cursor:not-allowed;">Confirm opens Sunday</button>`
+            }
             <button class="btn btnGhost" type="button" id="goHistory">History</button>
           </div>
 
@@ -305,14 +320,23 @@
             <button class="btn" type="button" id="goRules">Manage rules</button>
           </div>
 
-          <div class="tiny">Next: wire these screens to real data + Whop.</div>
+          <div class="tiny">
+            Dev: <button class="linkBtn" id="toggleConfirm">toggle confirm window</button>
+          </div>
         </div>
       `;
 
-      document.getElementById("goConfirm").onclick = () => setRoute("confirm");
+      document.getElementById("goConfirm").onclick = () => {
+        if (!state.confirmWindowOpen) return;
+        setRoute("confirm");
+      };
+      document.getElementById("toggleConfirm").onclick = () => {
+        state.confirmWindowOpen = !state.confirmWindowOpen;
+        saveState();
+        route();
+      };
       document.getElementById("goHistory").onclick = () => setRoute("history");
       document.getElementById("goRules").onclick = () => setRoute("rules");
-
     }
 
     function renderConfirm() {
@@ -541,6 +565,7 @@
   </script>
 </body>
 </html>
+
 
 
 
