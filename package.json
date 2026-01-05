@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@whop/sdk": "^1.0.0"
+    "@whop/sdk": "latest"
   }
 }
