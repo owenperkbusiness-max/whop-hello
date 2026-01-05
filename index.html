@@ -210,13 +210,6 @@
         ]
       }
     };
-
-    const saved = loadSavedState();
-    if (saved) {
-      if (typeof saved.userRule === "string") state.userRule = saved.userRule;
-      if (typeof saved.nextWeekRule === "string") state.nextWeekRule = saved.nextWeekRule;
-      if (typeof saved.statusText === "string") state.statusText = saved.statusText;
-    }
     
     function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
@@ -239,6 +232,13 @@
         statusText: state.statusText
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    }
+
+    const saved = loadSavedState();
+    if (saved) {
+      if (typeof saved.userRule === "string") state.userRule = saved.userRule;
+      if (typeof saved.nextWeekRule === "string") state.nextWeekRule = saved.nextWeekRule;
+      if (typeof saved.statusText === "string") state.statusText = saved.statusText;
     }
     
     function setRoute(route) {
@@ -537,5 +537,6 @@
   </script>
 </body>
 </html>
+
 
 
