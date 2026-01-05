@@ -360,6 +360,10 @@
         if (!state.confirmWindowOpen) return;
         setRoute("confirm");
       };
+        if (state.isPaused) return;
+        if (!state.confirmWindowOpen) return;
+        setRoute("confirm");
+      };
       document.getElementById("toggleConfirm").onclick = () => {
         state.confirmWindowOpen = !state.confirmWindowOpen;
         saveState();
@@ -648,6 +652,7 @@
   </script>
 </body>
 </html>
+
 
 
 
