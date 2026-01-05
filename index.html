@@ -501,24 +501,8 @@
       draw();
     }
 
-      input.addEventListener("input", updateCount);
-      updateCount();
-
-      document.getElementById("saveRule").onclick = () => {
-        const v = input.value.trim();
-        if (!v) {
-          alert("Enter a rule first.");
-          return;
-        }
-        state.userRule = v;
-        setRoute("dashboard");
-      };
-    }
-
     window.addEventListener("hashchange", route);
     route();
   </script>
 </body>
 </html>
-
-
