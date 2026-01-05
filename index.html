@@ -213,6 +213,27 @@
 
     function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+    const STORAGE_KEY = "va_app_state_v1";
+    
+    function loadSavedState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+    
+    function saveState() {
+      const toSave = {
+        userRule: state.userRule,
+        nextWeekRule: state.nextWeekRule,
+        statusText: state.statusText
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    }
+    
     function setRoute(route) {
       location.hash = route;
     }
@@ -506,3 +527,4 @@
   </script>
 </body>
 </html>
+
