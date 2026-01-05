@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@whop/api": "^1.0.0"
+    "@whop/api": "0.0.51"
   }
 }
