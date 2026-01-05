@@ -423,8 +423,6 @@
 
           <div class="tiny">
             Dev:
-            <button class="linkBtn" id="toggleConfirm">toggle confirm window</button>
-            <span class="muted">,</span>
             <button class="linkBtn" id="partnerPass">partner votes pass</button>
             <span class="muted">,</span>
             <button class="linkBtn" id="partnerFail">partner votes fail</button>
@@ -441,13 +439,7 @@
         if (!state.confirmWindowOpen) return;
         setRoute("confirm");
       };
-      document.getElementById("toggleConfirm").onclick = () => {
-        state.confirmWindowOpen = !state.confirmWindowOpen;
-        saveState();
-        computeTiming();
-        finalizeWeekIfNeeded();
-        route();
-      };
+      
       function computeOutcome() {
         // Passed only if both votes are pass
         if (state.youConfirmedPartner === "pass" && state.partnerConfirmedYou === "pass") {
@@ -735,6 +727,7 @@
   </script>
 </body>
 </html>
+
 
 
 
