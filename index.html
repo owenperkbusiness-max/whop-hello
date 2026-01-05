@@ -191,10 +191,13 @@
 
   <script>
     fetch("/api/me")
-      .then(r => r.json())
-      .then(data => console.log("ME", data))
+      .then(async (r) => {
+        const text = await r.text();
+        console.log("ME status", r.status);
+        console.log("ME raw", text);
+        try { console.log("ME json", JSON.parse(text)); } catch {}
+      })
       .catch(err => console.error("ME ERR", err));
-    console.log("WHOP OBJECT", window.whop || window.Whop || window.__WHOP__);
     // Fake data for now (we replace this with DB + Whop later)
     const state = {
       weekLabel: "Mon → Sun",
@@ -765,6 +768,7 @@
   </script>
 </body>
 </html>
+
 
 
 
