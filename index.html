@@ -216,15 +216,11 @@
       confirmCutoffISO: "", // ISO string for Sunday 11:59pm local
       finalizedWeekId: "", // prevents double-strikes on refresh
       history: {
-        totalWeeks: 4,
-        passed: 3,
-        missed: 1,
-        strikes: "1/3",
-        pastWeeks: [
-          { range: "Dec 23 – Dec 29", partner: "Jordan Lee", rule: "Meditate 10 minutes every morning", you: "Responded", partnerResp: "Responded", outcome: "Passed" },
-          { range: "Dec 16 – Dec 22", partner: "Taylor Chen", rule: "No social media until 5pm", you: "Responded", partnerResp: "Responded", outcome: "Passed" },
-          { range: "Dec 9 – Dec 15", partner: "Morgan Williams", rule: "Write 500 words daily", you: "Responded", partnerResp: "No response", outcome: "Missed" }
-        ]
+        totalWeeks: 0,
+        passed: 0,
+        missed: 0,
+        strikes: "0/3",
+        pastWeeks: []
       }
     };
     
@@ -310,6 +306,57 @@
       }
     }
 
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+    function formatMD(d) {
+      return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+    }
+    
+    function formatWeekRange(weekId) {
+      if (!weekId) return "";
+      const [y, m, day] = weekId.split("-").map(Number);
+      const mon = new Date(y, m - 1, day);
+      mon.setHours(0, 0, 0, 0);
+      const sun = new Date(mon);
+      sun.setDate(mon.getDate() + 6);
+      return `${formatMD(mon)} – ${formatMD(sun)}`;
+    }
+    
+    function recomputeHistoryStats() {
+      const h = state.history;
+      const weeks = Array.isArray(h.pastWeeks) ? h.pastWeeks : [];
+      h.totalWeeks = weeks.length;
+      h.passed = weeks.filter(w => w.outcome === "Passed").length;
+      h.missed = weeks.filter(w => w.outcome === "Missed").length;
+      h.strikes = `${state.strikes}/3`;
+    }
+    
+    function appendCurrentWeekToHistory() {
+      const h = state.history;
+      if (!Array.isArray(h.pastWeeks)) h.pastWeeks = [];
+    
+      // don’t duplicate the same week
+      if (h.pastWeeks.some(w => w.weekId === state.weekId)) return;
+    
+      const outcomeLabel = state.weekOutcome === "passed" ? "Passed" : "Missed";
+      const youResp = state.youConfirmedPartner ? "Responded" : "No response";
+      const partnerResp = state.partnerConfirmedYou ? "Responded" : "No response";
+    
+      h.pastWeeks.unshift({
+        weekId: state.weekId,
+        range: formatWeekRange(state.weekId),
+        partner: state.partner?.name || "Partner",
+        rule: state.partnerRule || "",
+        you: youResp,
+        partnerResp: partnerResp,
+        outcome: outcomeLabel
+      });
+    
+      // keep last 12 weeks
+      h.pastWeeks = h.pastWeeks.slice(0, 12);
+      recomputeHistoryStats();
+    }
+    
     function finalizeWeekIfNeeded() {
       const now = new Date();
       const cutoff = state.confirmCutoffISO ? new Date(state.confirmCutoffISO) : null;
@@ -342,6 +389,7 @@
       // Close window and mark finalized
       state.confirmWindowOpen = false;
       state.finalizedWeekId = state.weekId;
+      appendCurrentWeekToHistory();
       saveState();
     }
         
@@ -357,6 +405,7 @@
         strikes: state.strikes,
         isPaused: state.isPaused,
         finalizedWeekId: state.finalizedWeekId,
+        historyPastWeeks: state.history?.pastWeeks || [],
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     }
@@ -373,6 +422,8 @@
       if (typeof saved.strikes === "number") state.strikes = saved.strikes;
       if (typeof saved.isPaused === "boolean") state.isPaused = saved.isPaused;
       if (typeof saved.finalizedWeekId === "string") state.finalizedWeekId = saved.finalizedWeekId;
+      if (Array.isArray(saved.historyPastWeeks)) state.history.pastWeeks = saved.historyPastWeeks;
+      recomputeHistoryStats();
     }
     
     function setRoute(route) {
@@ -648,7 +699,7 @@
     
           <div class="card">
             <div class="label">Current week (locked)</div>
-            <div class="muted" style="font-size:12px; margin-bottom:6px;">Dec 29 – Jan 4</div>
+            <div class="muted" style="font-size:12px; margin-bottom:6px;">${esc(formatWeekRange(state.weekId))}</div>
             <div class="rule">${esc(state.userRule)}</div>
             <div class="sub muted">Cannot be changed</div>
           </div>
@@ -768,6 +819,7 @@
   </script>
 </body>
 </html>
+
 
 
 
