@@ -1,46 +1,35 @@
-import { WhopServerSdk } from "@whop/sdk";
+import Whop from "@whop/sdk";
 
-export default async function handler(req, res) {
+export async function GET(request) {
   try {
-    // Whop embedded apps pass a JWT in this header
-    const whopToken =
-      req.headers["x-whop-user-token"] ||
-      req.headers["X-Whop-User-Token"];
+    const whopUserToken = request.headers.get("x-whop-user-token");
+    const authorization = request.headers.get("authorization");
 
-    // Fallback if you ever call it manually with Authorization
-    const authorization = req.headers.authorization || "";
+    const token = authorization || (whopUserToken ? `Bearer ${whopUserToken}` : "");
 
-    const authHeader = authorization || (whopToken ? `Bearer ${whopToken}` : "");
-
-    if (!authHeader) {
-      return res.status(401).json({
-        ok: false,
-        reason: "missing_auth",
-        expected: "x-whop-user-token header (in iframe) or Authorization header (manual)",
-      });
+    if (!token) {
+      return Response.json(
+        { ok: false, reason: "missing_auth", expected: "x-whop-user-token or authorization" },
+        { status: 401 }
+      );
     }
 
-    const appId = process.env.WHOP_APP_ID;
     const apiKey = process.env.WHOP_API_KEY;
 
-    if (!appId || !apiKey) {
-      return res.status(500).json({
-        ok: false,
-        reason: "missing_env",
-        hasAppId: !!appId,
-        hasApiKey: !!apiKey,
-      });
+    if (!apiKey) {
+      return Response.json(
+        { ok: false, reason: "missing_env", hasApiKey: false },
+        { status: 500 }
+      );
     }
 
-    const sdk = new WhopServerSdk({
-      appId,
-      apiKey,
-      headers: { authorization: authHeader },
-    });
+    const client = new Whop({ apiKey, headers: { authorization: token } });
 
-    const me = await sdk.me.getMe();
-    return res.status(200).json({ ok: true, me });
+    // Minimal “does auth work” call
+    const me = await client.me.getMe();
+
+    return Response.json({ ok: true, me }, { status: 200 });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: String(e?.message || e) });
+    return Response.json({ ok: false, error: String(e?.message || e) }, { status: 500 });
   }
 }
