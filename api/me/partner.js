@@ -4,22 +4,29 @@ export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
 
   try {
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    // Whop user id from header (works inside Whop iframe)
+    // If these are missing, we return JSON instead of crashing
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({
+        ok: false,
+        error: "missing_supabase_env",
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseKey
+      });
+    }
+
     const userId = req.query.user_id;
-    if (!userId) return res.status(400).json({ ok: false, error: "pass ?user_id=user_..." });
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: "missing_user_id", example: "?user_id=user_123" });
+    }
 
-    // For now: you already store whop_user_id in whop_memberships from webhook,
-    // but you don’t have token→user lookup here yet, so we do a TEMP hack:
-    // allow passing ?user_id=user_... for testing outside Whop
-    const userId = req.query.user_id;
-    if (!userId) return res.status(400).json({ ok: false, error: "pass ?user_id=user_... for now" });
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get latest week pairing for this user
     const { data, error } = await supabase
       .from("partner_pairs")
-      .select("week_start, user_id, partner_user_id")
+      .select("week_start,user_id,partner_user_id")
       .eq("user_id", userId)
       .order("week_start", { ascending: false })
       .limit(1);
