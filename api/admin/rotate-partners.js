@@ -21,7 +21,10 @@ export default async function handler(req, res) {
 
   // Simple protection so random people can’t rotate your users
   const adminKey = process.env.ADMIN_ROTATE_KEY;
-  const provided = req.headers["x-admin-key"];
+  const provided =
+  req.headers["x-admin-key"] ||
+  req.headers["X-Admin-Key"] ||
+  req.headers["X-ADMIN-KEY"];
   if (!adminKey || provided !== adminKey) return res.status(401).json({ ok: false });
 
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
