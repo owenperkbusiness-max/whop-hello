@@ -7,8 +7,8 @@ export default async function handler(req, res) {
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
     // Whop user id from header (works inside Whop iframe)
-    const token = req.headers["x-whop-user-token"] || req.headers["X-Whop-User-Token"];
-    if (!token) return res.status(401).json({ ok: false, error: "missing_whop_user_token" });
+    const userId = req.query.user_id;
+    if (!userId) return res.status(400).json({ ok: false, error: "pass ?user_id=user_..." });
 
     // For now: you already store whop_user_id in whop_memberships from webhook,
     // but you don’t have token→user lookup here yet, so we do a TEMP hack:
