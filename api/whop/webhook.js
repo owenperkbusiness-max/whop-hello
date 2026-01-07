@@ -16,11 +16,7 @@ export default async function handler(req, res) {
     const eventType = event?.type || null;
     const eventId = event?.id || event?.event_id || null;
 
-    const whopUserId =
-      event?.data?.user?.id ||
-      event?.data?.user_id ||
-      event?.data?.membership?.user_id ||
-      null;
+    const whopUserId = event?.data?.user?.id || null;
 
     const membershipId =
       event?.data?.membership?.id ||
