@@ -808,6 +808,12 @@
       finalizeWeekIfNeeded();
       route();
     });
+    async function getWhopUserToken() {
+      // Whop SDK injects auth context inside the embedded app
+      const r = await fetch("/api/whop-auth");
+      const j = await r.json();
+      return j.token;
+    }
     route();
     fetch("/api/proxy/partner")
       .then(r => r.json())
@@ -826,5 +832,6 @@
   </script>
 </body>
 </html>
+
 
 
