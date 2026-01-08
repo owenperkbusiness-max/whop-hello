@@ -35,6 +35,7 @@ export default async function handler(req, res) {
       whop_user_id: whopUserId,
       membership_id: membershipId,
       product_id: productId,
+      user_name: event?.data?.user?.name || null,
       payload: event,
     });
 
