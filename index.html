@@ -827,11 +827,7 @@
       state.partner = null;
     
       // ONLY for testing outside Whop: add ?user_id=user_...
-      const testUserId = params.get("user_id");
-    
-      const url = testUserId
-        ? `/api/me/partner?user_id=${encodeURIComponent(testUserId)}`
-        : `/api/me/partner`;
+      const url = "/api/me/partner";
     
       console.log("PARTNER URL", url);
     
@@ -876,4 +872,5 @@
   </script>
 </body>
 </html>
+
 
