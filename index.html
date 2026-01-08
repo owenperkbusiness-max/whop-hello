@@ -813,10 +813,9 @@
     // SAFE partner loader, never black screens
     (function () {
       const params = new URLSearchParams(location.search);
-      const testUserId =
-        params.get("user_id") ||
-        (state?.me?.whop_user_id ?? null) ||
-        (state?.whop_user_id ?? null);
+
+      // MANUAL FOR NOW: put YOUR whop user id here
+      const testUserId = "user_wbtFArzPvFCsK";
     
       const url = testUserId
         ? `https://whop-hello.vercel.app/api/me/partner?user_id=${encodeURIComponent(testUserId)}`
@@ -844,5 +843,6 @@
   </script>
 </body>
 </html>
+
 
 
