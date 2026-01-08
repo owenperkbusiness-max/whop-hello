@@ -24,12 +24,9 @@ export default async function handler(req, res) {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { data, error } = await supabase
-      .from("partner_pairs")
-      .select("week_start,user_id,partner_user_id")
-      .eq("user_id", userId)
-      .order("week_start", { ascending: false })
-      .limit(1);
+    const { data, error } = await supabase.rpc("get_partner_with_name", {
+      input_user_id: userId
+    });
 
     if (error) return res.status(500).json({ ok: false, error: error.message });
     if (!data || data.length === 0) return res.status(200).json({ ok: true, hasPartner: false });
