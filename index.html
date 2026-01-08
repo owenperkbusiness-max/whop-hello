@@ -830,6 +830,7 @@
         : `/api/me/partner`;
       
       console.log("PARTNER URL", url);
+      const debugEl = document.getElementById("app");
 
       fetch(url)
         .then(async (r) => {
@@ -838,8 +839,14 @@
           try { data = JSON.parse(text); }
           catch { console.log("Partner endpoint returned non JSON:", text); return; }
     
-          if (!data.ok || !data.hasPartner) return;
-    
+          if (!data.ok || !data.hasPartner) {
+            debugEl.insertAdjacentHTML(
+              "beforeend",
+              `<div class="card"><div class="label">Debug</div><div class="sub">${esc(JSON.stringify(data))}</div></div>`
+            );
+            return;
+          }
+              
           state.partner = {
             initial: (data.pairing.partner_name || "P")[0],
             name: data.pairing.partner_name || "Partner",
@@ -853,8 +860,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
