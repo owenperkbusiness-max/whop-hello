@@ -204,8 +204,8 @@
       
           // overwrite fake partner in state
           state.partner = {
-            initial: data.pairing.partner_user_id[5].toUpperCase(),
-            name: data.pairing.partner_user_id,
+            initial: data.pairing.partner_name[0],
+            name: data.pairing.partner_name,
             handle: ""
           };
       
@@ -834,6 +834,7 @@
   </script>
 </body>
 </html>
+
 
 
 
