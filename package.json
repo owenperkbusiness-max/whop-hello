@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@whop/sdk": "latest",
-    "@supabase/supabase-js": "^2.45.0"
+    "@supabase/supabase-js": "^2.45.0",
+    "@whop/api": "latest",
   }
 }
