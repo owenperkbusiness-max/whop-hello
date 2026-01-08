@@ -1,3 +1,4 @@
+import { whopSdk } from "../../lib/whop-sdk.js";
 import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req, res) {
@@ -17,7 +18,13 @@ export default async function handler(req, res) {
       });
     }
 
-    const userId = req.query.user_id;
+    let userId = req.query.user_id; // fallback for testing outside Whop
+
+    if (!userId) {
+      const verified = await whopSdk.verifyUserToken(req.headers);
+      userId = verified.userId;
+    }
+
     if (!userId) {
       return res.status(400).json({ ok: false, error: "missing_user_id", example: "?user_id=user_123" });
     }
