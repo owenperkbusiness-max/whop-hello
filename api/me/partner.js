@@ -1,7 +1,32 @@
 import { createClient } from "@supabase/supabase-js";
 import { whopSdk } from "../../lib/whop-sdk.js";
 
+async function getUserIdFromRequest(req) {
+  // Token mode (inside Whop): header is automatically included on requests to your app’s own domain
+  const token = req.headers["x-whop-user-token"];
+  if (token) {
+    const result = await whopsdk.verifyUserToken(req.headers, { dontThrow: true });
+    if (result?.userId) return result.userId;
+  }
+
+  // Manual mode (outside Whop): allow ?user_id=user_xxx for testing
+  const url = new URL(req.url, `https://${req.headers.host}`);
+  const userId = url.searchParams.get("user_id");
+  if (userId) return userId;
+
+  return null;
+}
+
 export default async function handler(req, res) {
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) {
+      return res.status(401).json({
+        ok: false,
+        error: "missing_whop_user_token",
+        hint: "Inside Whop, call this endpoint as a RELATIVE URL: fetch('/api/me/partner')",
+      });
+    }
+
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "https://whop.com");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
