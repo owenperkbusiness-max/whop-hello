@@ -51,7 +51,19 @@ export default async function handler(req, res) {
         return res.status(401).json({ ok: false, error: "invalid_whop_user_token" });
       }
 
-      userId = verified.userId;
+      userId =
+        verified?.user?.id ||
+        verified?.userId ||
+        verified?.user_id ||
+        verified?.id;
+      
+      if (!userId) {
+        return res.status(401).json({
+          ok: false,
+          error: "token_verified_but_no_user_id",
+          verified_keys: Object.keys(verified || {}),
+        });
+      }
     }
 
     const { data, error } = await supabase.rpc("get_partner_with_name", {
