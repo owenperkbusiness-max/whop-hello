@@ -190,22 +190,6 @@
   <div class="container" id="app"></div>
 
   <script>
-    fetch("/api/me/partner")
-      .then(r => r.json())
-      .then(data => {
-        if (!data.ok || !data.hasPartner) return;
-    
-        state.partner = {
-          initial: data.pairing.partner_name?.[0] || "?",
-          name: data.pairing.partner_name || "Partner",
-          handle: ""
-        };
-    
-        route();
-      })
-      .catch(err => console.error("PARTNER ERR", err));
-
-
     // Fake data for now (we replace this with DB + Whop later)
     const state = {
       weekLabel: "Mon → Sun",
@@ -231,7 +215,22 @@
         pastWeeks: []
       }
     };
+
+    fetch("/api/me/partner")
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok || !data.hasPartner) return;
     
+        state.partner = {
+          initial: data.pairing.partner_name?.[0] || "?",
+          name: data.pairing.partner_name || "Partner",
+          handle: ""
+        };
+    
+        route();
+      })
+      .catch(err => console.error("PARTNER ERR", err));
+
     function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
     const STORAGE_KEY = "va_app_state_v1";
@@ -814,7 +813,7 @@
           };
         }
       }
-    
+      
       draw();
     }
 
@@ -824,32 +823,20 @@
       route();
     });
     route();
+    fetch("/api/me/partner")
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok || !data.hasPartner) return;
+    
+        state.partner = {
+          initial: data.pairing.partner_name?.[0] || "?",
+          name: data.pairing.partner_name || "Partner",
+          handle: ""
+        };
+    
+        route();
+      })
+      .catch(err => console.error("PARTNER ERR", err));
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
