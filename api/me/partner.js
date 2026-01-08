@@ -22,48 +22,32 @@ export default async function handler(req, res) {
     // Allow browser testing: /api/me/partner?user_id=user_...
     let userId = req.query.user_id;
 
-    // Otherwise: try Whop header
+    // Otherwise: get user from Whop token via Whop API
     if (!userId) {
-      const hasTokenHeader =
-        !!req.headers["x-whop-user-token"] || !!req.headers["X-Whop-User-Token"] || !!req.headers["x-whop-user-token".toLowerCase()];
-
-      if (!hasTokenHeader) {
-        return res.status(401).json({
-          ok: false,
-          error: "missing_whop_user_token",
-          hint: "Inside Whop iframe this should exist. Outside Whop, use ?user_id=user_..."
-        });
+      const token =
+        req.headers["x-whop-user-token"] ||
+        req.headers["X-Whop-User-Token"];
+    
+      if (!token) {
+        return res.status(401).json({ ok: false, error: "missing_whop_user_token" });
       }
-
-      let verified;
-      try {
-        const token =
-          req.headers["x-whop-user-token"] ||
-          req.headers["X-Whop-User-Token"] ||
-          req.query.token;
-        
-        if (!token) {
-          return res.status(401).json({ ok: false, error: "missing_whop_user_token" });
-        }
-        
-        verified = await whopSdk.verifyUserToken({ "x-whop-user-token": token });
-      } catch (e) {
+    
+      const meRes = await fetch("https://api.whop.com/api/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    
+      if (!meRes.ok) {
         return res.status(401).json({ ok: false, error: "invalid_whop_user_token" });
       }
-
-      userId =
-        verified?.user?.id ||
-        verified?.userId ||
-        verified?.user_id ||
-        verified?.id;
-      
+    
+      const me = await meRes.json();
+      userId = me?.id || me?.user?.id;
+    
       if (!userId) {
-        return res.status(401).json({
-          ok: false,
-          error: "token_verified_but_no_user_id",
-          verified_keys: Object.keys(verified || {}),
-        });
+        return res.status(401).json({ ok: false, error: "whop_me_missing_user_id" });
       }
+    }
+    
     }
 
     const { data, error } = await supabase.rpc("get_partner_with_name", {
