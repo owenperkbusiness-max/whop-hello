@@ -813,7 +813,10 @@
     // SAFE partner loader, never black screens
     (function () {
       const params = new URLSearchParams(location.search);
-      const testUserId = params.get("user_id");
+      const testUserId =
+        params.get("user_id") ||
+        (state?.me?.whop_user_id ?? null) ||
+        (state?.whop_user_id ?? null);
     
       const url = testUserId
         ? `/api/me/partner?user_id=${encodeURIComponent(testUserId)}`
@@ -841,3 +844,4 @@
   </script>
 </body>
 </html>
+
