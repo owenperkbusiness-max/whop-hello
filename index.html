@@ -819,8 +819,8 @@
         (state?.whop_user_id ?? null);
     
       const url = testUserId
-        ? `/api/me/partner?user_id=${encodeURIComponent(testUserId)}`
-        : `/api/me/partner`;
+        ? `https://whop-hello.vercel.app/api/me/partner?user_id=${encodeURIComponent(testUserId)}`
+        : `https://whop-hello.vercel.app/api/me/partner`;
     
       fetch(url)
         .then(async (r) => {
@@ -844,4 +844,5 @@
   </script>
 </body>
 </html>
+
 
