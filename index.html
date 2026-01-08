@@ -190,34 +190,21 @@
   <div class="container" id="app"></div>
 
   <script>
-    fetch("/api/me")
-      fetch("/api/me/partner")
-        .then(r => r.json())
-        .then(data => {
-          if (!data.ok || !data.hasPartner) return;
-      
-          state.partner = {
-            initial: data.pairing.partner_name?.[0] || "?",
-            name: data.pairing.partner_name || "Partner",
-            handle: ""
-          };
-      
-          route();
-        })
-        .catch(console.error);
-      
-          if (!data.ok || !data.hasPartner) return;
-      
-          // overwrite fake partner in state
-          state.partner = {
-            initial: data.pairing.partner_name[0],
-            name: data.pairing.partner_name,
-            handle: ""
-          };
-      
-          route(); // re-render UI
-        })
-        .catch(err => console.error("PARTNER ERR", err));
+    fetch("/api/me/partner")
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok || !data.hasPartner) return;
+    
+        state.partner = {
+          initial: data.pairing.partner_name?.[0] || "?",
+          name: data.pairing.partner_name || "Partner",
+          handle: ""
+        };
+    
+        route();
+      })
+      .catch(err => console.error("PARTNER ERR", err));
+
 
     // Fake data for now (we replace this with DB + Whop later)
     const state = {
@@ -840,6 +827,7 @@
   </script>
 </body>
 </html>
+
 
 
 
