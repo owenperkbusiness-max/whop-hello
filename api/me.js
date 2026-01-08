@@ -27,8 +27,13 @@ export async function GET(request) {
 
     // Minimal “does auth work” call
     const me = await client.me.getMe();
+    const userId = me.id;
 
-    return Response.json({ ok: true, me }, { status: 200 });
+    return Response.json(
+      { ok: true, user_id: userId },
+      { status: 200 }
+    );
+    
   } catch (e) {
     return Response.json({ ok: false, error: String(e?.message || e) }, { status: 500 });
   }
