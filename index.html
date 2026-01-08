@@ -191,6 +191,18 @@
 
   <script>
     fetch("/api/me")
+      // TEMP: replace with your real user id for testing
+      const TEST_USER_ID = "user_wbtFArzPvFCsK";
+      
+      fetch(`/api/me/partner?user_id=${TEST_USER_ID}`)
+        .then(r => r.json())
+        .then(data => {
+          const el = document.getElementById("partner");
+          if (!el) return;
+          if (!data.ok) return (el.textContent = "Partner error");
+          if (!data.hasPartner) return (el.textContent = "No partner yet");
+          el.textContent = `Your partner: ${data.pairing.partner_user_id}`;
+        });
       .then(async (r) => {
         const text = await r.text();
         console.log("ME status", r.status);
@@ -819,6 +831,7 @@
   </script>
 </body>
 </html>
+
 
 
 
