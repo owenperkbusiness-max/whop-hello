@@ -828,7 +828,9 @@
       const url = testUserId
         ? `/api/me/partner?user_id=${encodeURIComponent(testUserId)}`
         : `/api/me/partner`;
-    
+      
+      console.log("PARTNER URL", url);
+
       fetch(url)
         .then(async (r) => {
           const text = await r.text();
@@ -851,6 +853,7 @@
   </script>
 </body>
 </html>
+
 
 
 
