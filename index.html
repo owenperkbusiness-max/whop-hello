@@ -815,23 +815,30 @@
       return j.token;
     }
     route();
-    fetch("/api/proxy/partner")
+    
+    fetch("https://whop-hello.vercel.app/api/me/partner")
       .then(r => r.json())
       .then(data => {
         if (!data.ok || !data.hasPartner) return;
     
         state.partner = {
-          initial: (data.pairing.partner_name || "P")[0],
-          name: data.pairing.partner_name || "Partner",
+          initial: data.pairing.partner_name[0],
+          name: data.pairing.partner_name,
           handle: ""
         };
     
         route();
       })
+      .catch(err => {
+        console.error("PARTNER FETCH FAILED", err);
+      });
+
+      })
       .catch(console.error);
   </script>
 </body>
 </html>
+
 
 
 
