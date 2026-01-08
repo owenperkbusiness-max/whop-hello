@@ -819,44 +819,61 @@
     route();
     
     // SAFE partner loader, never black screens
-    (function () {
+    (async () => {
+      const appEl = document.getElementById("app");
       const params = new URLSearchParams(location.search);
-      state.partner = null; // reset partner every load so it can’t stick
-
-      const testUserId = params.get("user_id"); // only for testing outside Whop
+    
+      // reset on every load
+      state.partner = null;
+    
+      // ONLY for testing outside Whop: add ?user_id=user_...
+      const testUserId = params.get("user_id");
     
       const url = testUserId
         ? `/api/me/partner?user_id=${encodeURIComponent(testUserId)}`
         : `/api/me/partner`;
-      
+    
       console.log("PARTNER URL", url);
-      const debugEl = document.getElementById("app");
-
-      fetch(url)
-        .then(async (r) => {
-          const text = await r.text();
-          let data;
-          try { data = JSON.parse(text); }
-          catch { console.log("Partner endpoint returned non JSON:", text); return; }
     
-          if (!data.ok || !data.hasPartner) {
-            debugEl.insertAdjacentHTML(
-              "beforeend",
-              `<div class="card"><div class="label">Debug</div><div class="sub">${esc(JSON.stringify(data))}</div></div>`
-            );
-            return;
-          }
-              
-          state.partner = {
-            initial: (data.pairing.partner_name || "P")[0],
-            name: data.pairing.partner_name || "Partner",
-            handle: ""
-          };
+      // always show debug area
+      const showDebug = (obj) => {
+        appEl.insertAdjacentHTML(
+          "beforeend",
+          `<div class="card"><div class="label">Debug</div><div class="sub">${esc(JSON.stringify(obj))}</div></div>`
+        );
+      };
     
-          route();
-        })
-        .catch((err) => console.log("Partner fetch failed:", err));
+      try {
+        const r = await fetch(url);
+        const text = await r.text();
+    
+        // if server returned HTML (Whop/Vercel error page), show raw
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          showDebug({ ok: false, error: "non_json_response", status: r.status, body_start: text.slice(0, 200) });
+          return;
+        }
+    
+        showDebug(data);
+    
+        if (!data.ok || !data.hasPartner) return;
+    
+        // update state from API
+        state.pairing = data.pairing;
+        state.partner = {
+          initial: (data.pairing.partner_name || "?").trim().slice(0, 1).toUpperCase(),
+          name: data.pairing.partner_name || "Unknown",
+          handle: data.pairing.partner_handle || "",
+        };
+    
+        renderDashboard();
+      } catch (e) {
+        showDebug({ ok: false, error: "fetch_failed", message: String(e) });
+      }
     })();
   </script>
 </body>
 </html>
+
