@@ -2,6 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 import { whopSdk } from "../../lib/whop-sdk.js";
 
 export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "https://whop.com");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "x-whop-user-token,content-type");
+  
+  if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
 
   try {
