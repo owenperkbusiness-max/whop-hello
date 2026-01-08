@@ -809,21 +809,22 @@
       route();
     });
     route();
-    fetch("/api/me/partner")
+    fetch("/api/proxy/partner")
       .then(r => r.json())
       .then(data => {
         if (!data.ok || !data.hasPartner) return;
     
         state.partner = {
-          initial: data.pairing.partner_name?.[0] || "?",
+          initial: (data.pairing.partner_name || "P")[0],
           name: data.pairing.partner_name || "Partner",
           handle: ""
         };
     
         route();
       })
-      .catch(err => console.error("PARTNER ERR", err));
+      .catch(console.error);
   </script>
 </body>
 </html>
+
 
