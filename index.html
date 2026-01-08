@@ -216,20 +216,6 @@
       }
     };
 
-    fetch("/api/me/partner")
-      .then(r => r.json())
-      .then(data => {
-        if (!data.ok || !data.hasPartner) return;
-    
-        state.partner = {
-          initial: data.pairing.partner_name?.[0] || "?",
-          name: data.pairing.partner_name || "Partner",
-          handle: ""
-        };
-    
-        route();
-      })
-      .catch(err => console.error("PARTNER ERR", err));
 
     function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
@@ -840,3 +826,4 @@
   </script>
 </body>
 </html>
+
