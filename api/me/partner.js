@@ -1,89 +1,123 @@
 import { createClient } from "@supabase/supabase-js";
-import { whopSdk } from "../../lib/whop-sdk.js";
+import { whopsdk } from "../../lib/whop-sdk.js";
 
-async function getUserIdFromRequest(req) {
-  // Token mode (inside Whop): header is automatically included on requests to your app’s own domain
-  const token = req.headers["x-whop-user-token"];
-  if (token) {
-    const result = await whopsdk.verifyUserToken(req.headers, { dontThrow: true });
-    if (result?.userId) return result.userId;
-  }
+function mondayOfThisWeekUTC() {
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const day = d.getUTCDay(); // 0=Sun..6=Sat
+  const diff = (day === 0 ? -6 : 1) - day; // move to Monday
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().slice(0, 10); // YYYY-MM-DD
+}
 
-  // Manual mode (outside Whop): allow ?user_id=user_xxx for testing
-  const url = new URL(req.url, `https://${req.headers.host}`);
-  const userId = url.searchParams.get("user_id");
-  if (userId) return userId;
-
-  return null;
+function sendJson(res, status, obj) {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "content-type, x-whop-user-token");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.end(JSON.stringify(obj));
 }
 
 export default async function handler(req, res) {
-    const userId = await getUserIdFromRequest(req);
-    if (!userId) {
-      return res.status(401).json({
-        ok: false,
-        error: "missing_whop_user_token",
-        hint: "Inside Whop, call this endpoint as a RELATIVE URL: fetch('/api/me/partner')",
-      });
-    }
-
-  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "https://whop.com");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "x-whop-user-token,content-type");
-  
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
+  if (req.method === "OPTIONS") return sendJson(res, 200, { ok: true });
 
   try {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ ok: false, error: "missing_supabase_env" });
-    }
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // 1) Determine user_id
+    const url = new URL(req.url, `https://${req.headers.host}`);
+    const testUserId = url.searchParams.get("user_id");
 
-    // Allow browser testing: /api/me/partner?user_id=user_...
-    let userId = req.query.user_id;
+    let userId = testUserId;
 
-    // Otherwise: get user from Whop token via Whop API
     if (!userId) {
-      const token =
-        req.headers["x-whop-user-token"] ||
-        req.headers["X-Whop-User-Token"];
-    
-      if (!token) {
-        return res.status(401).json({ ok: false, error: "missing_whop_user_token" });
-      }
-    
-      const meRes = await fetch("https://api.whop.com/api/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    
-      if (!meRes.ok) {
-        return res.status(401).json({ ok: false, error: "invalid_whop_user_token" });
-      }
-    
-      const me = await meRes.json();
-      userId = me?.id || me?.user?.id;
-    
+      // Token mode (inside Whop)
+      const verified = await whopsdk.verifyUserToken(req.headers, { dontThrow: true });
+      userId = verified?.userId;
+
       if (!userId) {
-        return res.status(401).json({ ok: false, error: "whop_me_missing_user_id" });
+        return sendJson(res, 401, {
+          ok: false,
+          error: "missing_whop_user_token",
+          hint: "Inside Whop this should exist. Outside Whop, test with ?user_id=user_...",
+        });
       }
     }
-    
+
+    const weekStart = mondayOfThisWeekUTC();
+
+    // 2) Optional: get current user's name (from memberships table)
+    const { data: selfMem } = await supabase
+      .from("whop_memberships")
+      .select("user_name")
+      .eq("whop_user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle?.() ?? await supabase
+        .from("whop_memberships")
+        .select("user_name")
+        .eq("whop_user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+        .catch(() => ({ data: null }));
+
+    const userName = selfMem?.user_name ?? null;
+
+    // 3) Find pairing for this week
+    const pairingRes = await supabase
+      .from("partner_pairs")
+      .select("week_start,user_id,partner_user_id")
+      .eq("week_start", weekStart)
+      .eq("user_id", userId)
+      .limit(1);
+
+    const pairingRow = pairingRes.data?.[0] ?? null;
+
+    if (!pairingRow?.partner_user_id) {
+      return sendJson(res, 200, {
+        ok: true,
+        hasPartner: false,
+        pairing: null,
+        week_start: weekStart,
+        user_id: userId,
+        user_name: userName,
+      });
     }
 
-    const { data, error } = await supabase.rpc("get_partner_with_name", {
-      input_user_id: userId
+    // 4) Get partner name
+    const partnerId = pairingRow.partner_user_id;
+
+    const partnerNameRes = await supabase
+      .from("whop_memberships")
+      .select("user_name")
+      .eq("whop_user_id", partnerId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    const partnerName = partnerNameRes.data?.[0]?.user_name ?? partnerId;
+
+    return sendJson(res, 200, {
+      ok: true,
+      hasPartner: true,
+      pairing: {
+        week_start: pairingRow.week_start,
+        user_id: pairingRow.user_id,
+        partner_user_id: partnerId,
+        partner_name: partnerName,
+      },
+      user_id: userId,
+      user_name: userName,
     });
-
-    if (error) return res.status(500).json({ ok: false, error: error.message });
-    if (!data || data.length === 0) return res.status(200).json({ ok: true, hasPartner: false });
-
-    return res.status(200).json({ ok: true, hasPartner: true, pairing: data[0] });
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: String(e?.message || e) });
+  } catch (err) {
+    return sendJson(res, 500, {
+      ok: false,
+      error: "server_error",
+      message: String(err?.message || err),
+    });
   }
 }
