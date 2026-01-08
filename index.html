@@ -195,7 +195,7 @@
       weekLabel: "Mon → Sun",
       userRule: "No social media before 6pm",
       nextWeekRule: "",
-      partner: { initial: "J", name: "James R.", handle: "@jamesruns" },
+      partner: null,
       partnerRule: "Gym 4× this week",
       statusText: "Waiting for Sunday confirmations to open.",
       confirmWindowOpen: false, // later: auto true on Sunday
@@ -452,26 +452,34 @@
           <div class="sub">Keep it specific, measurable, and easy to verify.</div>
         </div>
 
-        <div class="card">
-          <div class="label">Your partner</div>
-
-          <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-            <div style="
-              width:36px; height:36px; border-radius:50%;
-              background:#2a2a2a; display:flex; align-items:center; justify-content:center;
-              font-weight:800;
-            ">${esc(state.partner.initial)}</div>
-
-            <div>
-              <div style="font-weight:800;">${esc(state.partner.name)}</div>
-              <div style="font-size:12px; color:#9a9a9a;">${esc(state.partner.handle)}</div>
+        ${state.partner ? `
+          <div class="card">
+            <div class="label">Your partner</div>
+        
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+              <div style="
+                width:36px; height:36px; border-radius:50%;
+                background:#2a2a2a; display:flex; align-items:center; justify-content:center;
+                font-weight:800;
+              ">${esc(state.partner.initial)}</div>
+        
+              <div>
+                <div style="font-weight:800;">${esc(state.partner.name)}</div>
+                <div style="font-size:12px; color:#9a9a9a;">${esc(state.partner.handle || "")}</div>
+              </div>
             </div>
+        
+            <div class="label" style="margin-top:6px;">Partner’s rule</div>
+            <div class="rule">${esc(state.partnerRule)}</div>
+            <div class="sub">You’ll confirm this on Sunday.</div>
           </div>
-
-          <div class="label" style="margin-top:6px;">Partner’s rule</div>
-          <div class="rule">${esc(state.partnerRule)}</div>
-          <div class="sub">You’ll confirm this on Sunday.</div>
-        </div>
+        ` : `
+          <div class="card">
+            <div class="label">Your partner</div>
+            <div class="rule">No partner yet</div>
+            <div class="sub">This account is not enrolled or hasn’t been matched.</div>
+          </div>
+        `}
 
         <div class="status">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
@@ -813,13 +821,13 @@
     // SAFE partner loader, never black screens
     (function () {
       const params = new URLSearchParams(location.search);
+      state.partner = null; // reset partner every load so it can’t stick
 
-      // MANUAL FOR NOW: put YOUR whop user id here
-      const testUserId = "user_wbtFArzPvFCsK";
+      const testUserId = params.get("user_id"); // only for testing outside Whop
     
       const url = testUserId
-        ? `https://whop-hello.vercel.app/api/me/partner?user_id=${encodeURIComponent(testUserId)}`
-        : `https://whop-hello.vercel.app/api/me/partner`;
+        ? `/api/me/partner?user_id=${encodeURIComponent(testUserId)}`
+        : `/api/me/partner`;
     
       fetch(url)
         .then(async (r) => {
@@ -843,6 +851,7 @@
   </script>
 </body>
 </html>
+
 
 
 
