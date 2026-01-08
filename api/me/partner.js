@@ -1,5 +1,5 @@
-import { whopSdk } from "../../lib/whop-sdk.js";
 import { createClient } from "@supabase/supabase-js";
+import { whopSdk } from "../../lib/whop-sdk.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).send("Method Not Allowed");
@@ -7,29 +7,37 @@ export default async function handler(req, res) {
   try {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    // If these are missing, we return JSON instead of crashing
     if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({
-        ok: false,
-        error: "missing_supabase_env",
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseKey
-      });
-    }
-
-    let userId = req.query.user_id; // fallback for testing outside Whop
-
-    if (!userId) {
-      const verified = await whopSdk.verifyUserToken(req.headers);
-      userId = verified.userId;
-    }
-
-    if (!userId) {
-      return res.status(400).json({ ok: false, error: "missing_user_id", example: "?user_id=user_123" });
+      return res.status(500).json({ ok: false, error: "missing_supabase_env" });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Allow browser testing: /api/me/partner?user_id=user_...
+    let userId = req.query.user_id;
+
+    // Otherwise: try Whop header
+    if (!userId) {
+      const hasTokenHeader =
+        !!req.headers["x-whop-user-token"] || !!req.headers["X-Whop-User-Token"] || !!req.headers["x-whop-user-token".toLowerCase()];
+
+      if (!hasTokenHeader) {
+        return res.status(401).json({
+          ok: false,
+          error: "missing_whop_user_token",
+          hint: "Inside Whop iframe this should exist. Outside Whop, use ?user_id=user_..."
+        });
+      }
+
+      let verified;
+      try {
+        verified = await whopSdk.verifyUserToken(req.headers);
+      } catch (e) {
+        return res.status(401).json({ ok: false, error: "invalid_whop_user_token" });
+      }
+
+      userId = verified.userId;
+    }
 
     const { data, error } = await supabase.rpc("get_partner_with_name", {
       input_user_id: userId
