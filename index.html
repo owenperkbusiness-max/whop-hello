@@ -191,14 +191,20 @@
 
   <script>
     fetch("/api/me")
-      // TEMP testing user id
-      const TEST_USER_ID = "user_wbtFArzPvFCsK";
-      
-      // Fetch partner info
-      fetch(`/api/me/partner?user_id=${TEST_USER_ID}`)
+      fetch("/api/me/partner")
         .then(r => r.json())
         .then(data => {
-          console.log("Partner data", data);
+          if (!data.ok || !data.hasPartner) return;
+      
+          state.partner = {
+            initial: data.pairing.partner_name?.[0] || "?",
+            name: data.pairing.partner_name || "Partner",
+            handle: ""
+          };
+      
+          route();
+        })
+        .catch(console.error);
       
           if (!data.ok || !data.hasPartner) return;
       
@@ -834,6 +840,7 @@
   </script>
 </body>
 </html>
+
 
 
 
