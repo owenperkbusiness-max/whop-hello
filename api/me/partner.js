@@ -31,7 +31,16 @@ export default async function handler(req, res) {
 
       let verified;
       try {
-        verified = await whopSdk.verifyUserToken(req.headers);
+        const token =
+          req.headers["x-whop-user-token"] ||
+          req.headers["X-Whop-User-Token"] ||
+          req.query.token;
+        
+        if (!token) {
+          return res.status(401).json({ ok: false, error: "missing_whop_user_token" });
+        }
+        
+        verified = await whopSdk.verifyUserToken({ "x-whop-user-token": token });
       } catch (e) {
         return res.status(401).json({ ok: false, error: "invalid_whop_user_token" });
       }
